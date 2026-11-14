@@ -1,10 +1,7 @@
-add_executable(jsnmk_tests tests.c)
-target_link_libraries(jsnmk_tests PRIVATE jsnmk)
+add_executable(jsnmk_unit_tests tests.c)
+target_link_libraries(jsnmk_unit_tests PRIVATE jsnmk)
 
-add_test(
-    NAME jsnmk_tests
-    COMMAND jsnmk_tests -v
-)
+add_test(NAME jsnmk_unit_tests COMMAND jsnmk_unit_tests -v)
 
 add_executable(jsnmk_json_dump json_dump.c)
 target_link_libraries(jsnmk_json_dump PRIVATE jsnmk)
@@ -16,7 +13,7 @@ if(Python3_Interpreter_FOUND)
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/validate_json.py
                 $<TARGET_FILE:jsnmk_json_dump>
-                13
+                17
     )
 else()
     message(STATUS "Python3 interpreter not found - JSON parser test disabled")
@@ -56,7 +53,7 @@ if(ENABLE_SANITIZERS)
         endif()
         list(APPEND jsnmk_sanitizer_flags "-fno-omit-frame-pointer" "-g")
 
-        foreach(target IN ITEMS jsnmk_tests jsnmk_json_dump)
+        foreach(target IN ITEMS jsnmk_unit_tests jsnmk_json_dump)
             target_compile_options(${target} PRIVATE ${jsnmk_sanitizer_flags})
             target_link_options(${target} PRIVATE ${jsnmk_sanitizer_flags})
         endforeach()

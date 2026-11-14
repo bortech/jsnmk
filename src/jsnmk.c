@@ -43,12 +43,15 @@ static bool jsnmk_begin(jsnmk_buf_t *b, const char *name, char c)
  * Precondition: a matching begin call has already written at least one
  * byte, so b->p points past the start of the caller's buffer.
  *
+ * Every end call leaves a trailing comma; the enclosing end consumes it,
+ * and jsnmk_finalyze() removes the final one.
+ *
  * If this precondition is violated, for example by calling an end
  * function without a matching begin on a fresh buffer, the check below
  * reads b->p[-1] and the behavior is undefined. See jsnmk.h.
  */
 __attribute__((warn_unused_result))
-static bool jsnmk_end(jsnmk_buf_t *b, bool named, char c)
+static bool jsnmk_end(jsnmk_buf_t *b, char c)
 {
     if (*(b->p - 1) == ',') {
         *(b->p - 1) = c;
@@ -56,11 +59,10 @@ static bool jsnmk_end(jsnmk_buf_t *b, bool named, char c)
         if (!jsnmk_ch(b, c))
             return false;
     }
-    if (named)
-        return jsnmk_ch(b, ',');
-    return true;
+    return jsnmk_ch(b, ',');
 }
 
+__attribute__((warn_unused_result))
 static bool jsnmk_vfmt(jsnmk_buf_t *b, const char* fmt, va_list args)
 {
     int n = vsnprintf(b->p, b->size, fmt, args);
@@ -93,24 +95,14 @@ bool jsnmk_obj_begin(jsnmk_buf_t *b)
     return jsnmk_begin(b, NULL, '{');
 }
 
-bool jsnmk_key_obj_end(jsnmk_buf_t *b)
-{
-    return jsnmk_end(b, true, '}');
-}
-
 bool jsnmk_obj_end(jsnmk_buf_t *b)
 {
-    return jsnmk_end(b, false, '}');
+    return jsnmk_end(b, '}');
 }
 
 bool jsnmk_key_arr_begin(jsnmk_buf_t *b, const char *key)
 {
     return jsnmk_begin(b, key, '[');
-}
-
-bool jsnmk_key_arr_end(jsnmk_buf_t *b)
-{
-    return jsnmk_end(b, true, ']');
 }
 
 bool jsnmk_arr_begin(jsnmk_buf_t *b)
@@ -120,7 +112,7 @@ bool jsnmk_arr_begin(jsnmk_buf_t *b)
 
 bool jsnmk_arr_end(jsnmk_buf_t *b)
 {
-    return jsnmk_end(b, false, ']');
+    return jsnmk_end(b, ']');
 }
 
 __attribute__ ((__format__ (__printf__, 2, 3)))
@@ -236,38 +228,17 @@ bool jsnmk_key_fstr(jsnmk_buf_t *b, const char *key, const char *fmt, ...)
     return jsnmk_ch(b, ',');
 }
 
-#ifdef COMPILE_TEST
-
-int main()
+/*
+ * Precondition: at least one byte has been written, so b->p points past
+ * the start of the buffer.
+ */
+bool jsnmk_finalyze(jsnmk_buf_t *b)
 {
-    char buf[256] = {0};
-    jsnmk_buf_t b = {.p = buf, .size = sizeof(buf)};
-
-    jsnmk_obj_begin(&b);
-        jsnmk_key_bool(&b, "run", true);
-        jsnmk_key_bool(&b, "stop", false);
-        jsnmk_key_null(&b, "empty");
-        jsnmk_key_cstr(&b, "name", "John");
-        jsnmk_key_fstr(&b, "time", "%02u:%02u:%02u", 21, 02, 13);
-        jsnmk_key_obj_begin(&b, "obj");
-            jsnmk_key_i32(&b, "i32", -42);
-            jsnmk_key_u32(&b, "u32", 69);
-            jsnmk_key_f32(&b, "f32", 3.14);
-        jsnmk_key_obj_end(&b);
-        jsnmk_key_arr_begin(&b, "list");
-            jsnmk_bool(&b, true);
-            jsnmk_bool(&b, false);
-            jsnmk_null(&b);
-            jsnmk_i32(&b, -42);
-            jsnmk_u32(&b, 69);
-            jsnmk_f32(&b, 3.14);
-            jsnmk_fstr(&b, "%d.%d.%d", 1, 2, 3);
-            jsnmk_cstr(&b, "Colorado");
-        jsnmk_key_arr_end(&b);
-    jsnmk_obj_end(&b);
-
-    printf("%.*s\n", (int)(sizeof(buf) - b.size), buf);
-    return 0;
+    if (b->p[-1] != ',')
+        return false;
+    b->p--;
+    b->size++;
+    *b->p = 0;
+    return true;
 }
 
-#endif // COMPILE_TEST

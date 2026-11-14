@@ -42,6 +42,7 @@ TEST test1(void)
     ASSERT(jsnmk_key_f32(&f.b, "value", 3.14));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "{\"bool\":true,\"name\":\"John\",\"value\":3.14}");
     PASS();
 }
@@ -56,6 +57,7 @@ TEST empty_object(void)
     ASSERT(jsnmk_obj_begin(&f.b));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "{}");
     PASS();
 }
@@ -68,6 +70,7 @@ TEST empty_array(void)
     ASSERT(jsnmk_arr_begin(&f.b));
     ASSERT(jsnmk_arr_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "[]");
     PASS();
 }
@@ -79,11 +82,12 @@ TEST nested_empty_containers(void)
 
     ASSERT(jsnmk_obj_begin(&f.b));
     ASSERT(jsnmk_key_obj_begin(&f.b, "obj"));
-    ASSERT(jsnmk_key_obj_end(&f.b));
+    ASSERT(jsnmk_obj_end(&f.b));
     ASSERT(jsnmk_key_arr_begin(&f.b, "arr"));
-    ASSERT(jsnmk_key_arr_end(&f.b));
+    ASSERT(jsnmk_arr_end(&f.b));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "{\"obj\":{},\"arr\":[]}");
     PASS();
 }
@@ -103,6 +107,7 @@ TEST object_with_all_scalar_types(void)
     ASSERT(jsnmk_key_cstr(&f.b, "s", "John"));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f,
         "{\"n\":null,\"t\":true,\"f\":false,\"i\":-42,"
         "\"u\":4294967295,\"x\":3.14,\"s\":\"John\"}");
@@ -124,7 +129,88 @@ TEST array_of_scalars(void)
     ASSERT(jsnmk_cstr(&f.b, "hi"));
     ASSERT(jsnmk_arr_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "[null,true,false,-42,4294967295,3.14,\"hi\"]");
+    PASS();
+}
+
+TEST array_of_objects(void)
+{
+    fixture_t f;
+    fixture_init(&f);
+
+    ASSERT(jsnmk_arr_begin(&f.b));
+    ASSERT(jsnmk_obj_begin(&f.b));
+    ASSERT(jsnmk_key_i32(&f.b, "a", 1));
+    ASSERT(jsnmk_obj_end(&f.b));       /* leaves ',' */
+    ASSERT(jsnmk_obj_begin(&f.b));
+    ASSERT(jsnmk_key_i32(&f.b, "b", 2));
+    ASSERT(jsnmk_obj_end(&f.b));       /* leaves ',' */
+    ASSERT(jsnmk_arr_end(&f.b));       /* consumes the last ',' */
+    ASSERT(jsnmk_finalyze(&f.b));
+
+    ASSERT_JSON(&f, "[{\"a\":1},{\"b\":2}]");
+    PASS();
+}
+
+TEST array_of_arrays(void)
+{
+    fixture_t f;
+    fixture_init(&f);
+
+    ASSERT(jsnmk_arr_begin(&f.b));
+    ASSERT(jsnmk_arr_begin(&f.b));
+    ASSERT(jsnmk_i32(&f.b, 1));
+    ASSERT(jsnmk_arr_end(&f.b));
+    ASSERT(jsnmk_arr_begin(&f.b));
+    ASSERT(jsnmk_i32(&f.b, 2));
+    ASSERT(jsnmk_arr_end(&f.b));
+    ASSERT(jsnmk_arr_end(&f.b));
+    ASSERT(jsnmk_finalyze(&f.b));
+
+    ASSERT_JSON(&f, "[[1],[2]]");
+    PASS();
+}
+
+TEST array_with_mixed_containers(void)
+{
+    fixture_t f;
+    fixture_init(&f);
+
+    ASSERT(jsnmk_arr_begin(&f.b));
+    ASSERT(jsnmk_obj_begin(&f.b));
+    ASSERT(jsnmk_key_i32(&f.b, "a", 1));
+    ASSERT(jsnmk_obj_end(&f.b));
+    ASSERT(jsnmk_i32(&f.b, 2));
+    ASSERT(jsnmk_arr_begin(&f.b));
+    ASSERT(jsnmk_arr_end(&f.b));
+    ASSERT(jsnmk_obj_begin(&f.b));
+    ASSERT(jsnmk_obj_end(&f.b));
+    ASSERT(jsnmk_arr_end(&f.b));
+    ASSERT(jsnmk_finalyze(&f.b));
+
+    ASSERT_JSON(&f, "[{\"a\":1},2,[],{}]");
+    PASS();
+}
+
+TEST object_with_array_of_objects(void)
+{
+    fixture_t f;
+    fixture_init(&f);
+
+    ASSERT(jsnmk_obj_begin(&f.b));
+    ASSERT(jsnmk_key_arr_begin(&f.b, "items"));
+    ASSERT(jsnmk_obj_begin(&f.b));
+    ASSERT(jsnmk_key_i32(&f.b, "id", 1));
+    ASSERT(jsnmk_obj_end(&f.b));
+    ASSERT(jsnmk_obj_begin(&f.b));
+    ASSERT(jsnmk_key_i32(&f.b, "id", 2));
+    ASSERT(jsnmk_obj_end(&f.b));
+    ASSERT(jsnmk_arr_end(&f.b));
+    ASSERT(jsnmk_obj_end(&f.b));
+    ASSERT(jsnmk_finalyze(&f.b));
+
+    ASSERT_JSON(&f, "{\"items\":[{\"id\":1},{\"id\":2}]}");
     PASS();
 }
 
@@ -136,17 +222,18 @@ TEST nested_objects_as_siblings(void)
     ASSERT(jsnmk_obj_begin(&f.b));
     ASSERT(jsnmk_key_obj_begin(&f.b, "a"));
     ASSERT(jsnmk_key_i32(&f.b, "x", 1));
-    ASSERT(jsnmk_key_obj_end(&f.b));
+    ASSERT(jsnmk_obj_end(&f.b));
     ASSERT(jsnmk_key_obj_begin(&f.b, "b"));
     ASSERT(jsnmk_key_i32(&f.b, "y", 2));
-    ASSERT(jsnmk_key_obj_end(&f.b));
+    ASSERT(jsnmk_obj_end(&f.b));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "{\"a\":{\"x\":1},\"b\":{\"y\":2}}");
     PASS();
 }
 
-TEST nested_array_as_last_element(void)
+TEST nested_array_in_array(void)
 {
     fixture_t f;
     fixture_init(&f);
@@ -159,6 +246,7 @@ TEST nested_array_as_last_element(void)
     ASSERT(jsnmk_arr_end(&f.b));
     ASSERT(jsnmk_arr_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "[1,[2,3]]");
     PASS();
 }
@@ -172,12 +260,13 @@ TEST object_with_array_and_array_with_object(void)
     ASSERT(jsnmk_key_arr_begin(&f.b, "list"));
     ASSERT(jsnmk_bool(&f.b, true));
     ASSERT(jsnmk_null(&f.b));
-    ASSERT(jsnmk_key_arr_end(&f.b));
+    ASSERT(jsnmk_arr_end(&f.b));
     ASSERT(jsnmk_key_obj_begin(&f.b, "last"));
     ASSERT(jsnmk_key_i32(&f.b, "id", 7));
     ASSERT(jsnmk_obj_end(&f.b));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "{\"list\":[true,null],\"last\":{\"id\":7}}");
     PASS();
 }
@@ -193,17 +282,18 @@ TEST mixed_document(void)
     ASSERT(jsnmk_key_arr_begin(&f.b, "tags"));
     ASSERT(jsnmk_cstr(&f.b, "a"));
     ASSERT(jsnmk_cstr(&f.b, "b"));
-    ASSERT(jsnmk_key_arr_end(&f.b));
-    ASSERT(jsnmk_key_obj_end(&f.b));
+    ASSERT(jsnmk_arr_end(&f.b));
+    ASSERT(jsnmk_obj_end(&f.b));
     ASSERT(jsnmk_key_arr_begin(&f.b, "items"));
     ASSERT(jsnmk_i32(&f.b, 1));
     ASSERT(jsnmk_obj_begin(&f.b));
     ASSERT(jsnmk_key_bool(&f.b, "ok", true));
     ASSERT(jsnmk_obj_end(&f.b));
-    ASSERT(jsnmk_key_arr_end(&f.b));
+    ASSERT(jsnmk_arr_end(&f.b));
     ASSERT(jsnmk_key_bool(&f.b, "done", false));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f,
         "{\"meta\":{\"v\":1,\"tags\":[\"a\",\"b\"]},"
         "\"items\":[1,{\"ok\":true}],\"done\":false}");
@@ -212,37 +302,44 @@ TEST mixed_document(void)
 
 /* ---------- scalars / formatting ---------- */
 
-TEST top_level_values_keep_trailing_comma(void)
+TEST top_level_values_are_finalized(void)
 {
     fixture_t f;
     fixture_init(&f);
 
     ASSERT(jsnmk_null(&f.b));
-    ASSERT_JSON(&f, "null,");
+    ASSERT(jsnmk_finalyze(&f.b));
+    ASSERT_JSON(&f, "null");
 
     fixture_init(&f);
     ASSERT(jsnmk_bool(&f.b, false));
-    ASSERT_JSON(&f, "false,");
+    ASSERT(jsnmk_finalyze(&f.b));
+    ASSERT_JSON(&f, "false");
 
     fixture_init(&f);
     ASSERT(jsnmk_i32(&f.b, -42));
-    ASSERT_JSON(&f, "-42,");
+    ASSERT(jsnmk_finalyze(&f.b));
+    ASSERT_JSON(&f, "-42");
 
     fixture_init(&f);
     ASSERT(jsnmk_u32(&f.b, 69));
-    ASSERT_JSON(&f, "69,");
+    ASSERT(jsnmk_finalyze(&f.b));
+    ASSERT_JSON(&f, "69");
 
     fixture_init(&f);
     ASSERT(jsnmk_f32(&f.b, 3.14f));
-    ASSERT_JSON(&f, "3.14,");
+    ASSERT(jsnmk_finalyze(&f.b));
+    ASSERT_JSON(&f, "3.14");
 
     fixture_init(&f);
     ASSERT(jsnmk_cstr(&f.b, "hi"));
-    ASSERT_JSON(&f, "\"hi\",");
+    ASSERT(jsnmk_finalyze(&f.b));
+    ASSERT_JSON(&f, "\"hi\"");
 
     fixture_init(&f);
     ASSERT(jsnmk_fstr(&f.b, "%d.%d.%d", 1, 2, 3));
-    ASSERT_JSON(&f, "\"1.2.3\",");
+    ASSERT(jsnmk_finalyze(&f.b));
+    ASSERT_JSON(&f, "\"1.2.3\"");
     PASS();
 }
 
@@ -258,6 +355,7 @@ TEST integer_bounds(void)
     ASSERT(jsnmk_key_i32(&f.b, "zero", 0));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f,
         "{\"min\":-2147483648,\"max\":2147483647,"
         "\"umax\":4294967295,\"zero\":0}");
@@ -277,6 +375,7 @@ TEST f32_uses_g_format(void)
     ASSERT(jsnmk_key_f32(&f.b, "e", -0.0f));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "{\"a\":1,\"b\":0.5,\"c\":3.14,\"d\":1e+06,\"e\":-0}");
     PASS();
 }
@@ -291,6 +390,7 @@ TEST fstr_formats_with_printf_args(void)
     ASSERT(jsnmk_key_fstr(&f.b, "pair", "%d-%d", 1, 2));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "{\"time\":\"21:02:13\",\"pair\":\"1-2\"}");
     PASS();
 }
@@ -304,25 +404,29 @@ TEST empty_key_is_allowed(void)
     ASSERT(jsnmk_key_i32(&f.b, "", 1));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "{\"\":1}");
     PASS();
 }
 
 /* ---------- buffer limits / error handling ---------- */
 
-TEST library_writes_only_used_bytes(void)
+TEST finalize_rolls_back_and_nullterminate(void)
 {
     char buf[32];
     memset(buf, 0xAA, sizeof(buf));
     jsnmk_buf_t b = { .p = buf, .size = sizeof(buf) };
 
     ASSERT(jsnmk_obj_begin(&b));
-    ASSERT(jsnmk_obj_end(&b));
+    ASSERT(jsnmk_obj_end(&b));       /* "{}," */
+    ASSERT(jsnmk_finalyze(&b));      /* logical "{}" */
 
     ASSERT_EQ((ptrdiff_t)2, b.p - buf);
-    ASSERT_EQ('{', buf[0]);
-    ASSERT_EQ('}', buf[1]);
-    for (size_t i = 2; i < sizeof(buf); i++)
+    ASSERT_STRN_EQ("{}", buf, 2);
+    ASSERT_EQ((uint32_t)(sizeof(buf) - 2), b.size);
+    /* Only p/size are rolled back; the comma stays in memory. */
+    ASSERT_EQ('\0', buf[2]);
+    for (size_t i = 3; i < sizeof(buf); i++)
         ASSERT_EQ((unsigned char)0xAA, (unsigned char)buf[i]);
 
     PASS();
@@ -331,7 +435,8 @@ TEST library_writes_only_used_bytes(void)
 TEST exact_buffer_size_needs_one_spare_byte(void)
 {
     /* "{\"a\":1}" is 7 bytes, but snprintf needs room for '\0' while
-       formatting the value, so a 7-byte buffer is too small. */
+       formatting the value, and the end call leaves a trailing comma that
+       jsnmk_finalyze() removes afterwards. */
     char seven[7];
     jsnmk_buf_t b7 = { .p = seven, .size = sizeof(seven) };
     ASSERT(jsnmk_obj_begin(&b7));
@@ -343,6 +448,7 @@ TEST exact_buffer_size_needs_one_spare_byte(void)
     ASSERT(jsnmk_obj_begin(&b8));
     ASSERT(jsnmk_key_i32(&b8, "a", 1));
     ASSERT(jsnmk_obj_end(&b8));
+    ASSERT(jsnmk_finalyze(&b8));
     ASSERT_EQ((ptrdiff_t)7, b8.p - eight);
     ASSERT_STRN_EQ("{\"a\":1}", eight, 7);
     ASSERT_EQ((uint32_t)1, b8.size);
@@ -363,6 +469,25 @@ TEST overflow_reports_failure_and_freezes_buffer(void)
        every return value (or stop on the first failure). */
     ASSERT_FALSE(jsnmk_key_bool(&b, "x", true));
     ASSERT_FALSE(jsnmk_obj_end(&b));
+    /* finalyze() cannot repair a failed document either. */
+    ASSERT_FALSE(jsnmk_finalyze(&b));
+
+    PASS();
+}
+
+TEST finalize_twice_is_rejected(void)
+{
+    fixture_t f;
+    fixture_init(&f);
+
+    ASSERT(jsnmk_obj_begin(&f.b));
+    ASSERT(jsnmk_obj_end(&f.b));
+    ASSERT(jsnmk_finalyze(&f.b));
+    ASSERT_JSON(&f, "{}");
+
+    /* The document is already finalized: no trailing comma remains. */
+    ASSERT_FALSE(jsnmk_finalyze(&f.b));
+    ASSERT_JSON(&f, "{}");
 
     PASS();
 }
@@ -376,6 +501,7 @@ TEST null_key_is_rejected_without_writing(void)
     ASSERT_FALSE(jsnmk_key_bool(&f.b, NULL, true));
     ASSERT(jsnmk_obj_end(&f.b));
 
+    ASSERT(jsnmk_finalyze(&f.b));
     ASSERT_JSON(&f, "{}");
     PASS();
 }
@@ -394,15 +520,19 @@ SUITE(containers)
     RUN_TEST(nested_empty_containers);
     RUN_TEST(object_with_all_scalar_types);
     RUN_TEST(array_of_scalars);
+    RUN_TEST(array_of_objects);
+    RUN_TEST(array_of_arrays);
+    RUN_TEST(array_with_mixed_containers);
+    RUN_TEST(object_with_array_of_objects);
     RUN_TEST(nested_objects_as_siblings);
-    RUN_TEST(nested_array_as_last_element);
+    RUN_TEST(nested_array_in_array);
     RUN_TEST(object_with_array_and_array_with_object);
     RUN_TEST(mixed_document);
 }
 
 SUITE(scalars)
 {
-    RUN_TEST(top_level_values_keep_trailing_comma);
+    RUN_TEST(top_level_values_are_finalized);
     RUN_TEST(integer_bounds);
     RUN_TEST(f32_uses_g_format);
     RUN_TEST(fstr_formats_with_printf_args);
@@ -411,9 +541,10 @@ SUITE(scalars)
 
 SUITE(buffer_limits)
 {
-    RUN_TEST(library_writes_only_used_bytes);
+    RUN_TEST(finalize_rolls_back_and_nullterminate);
     RUN_TEST(exact_buffer_size_needs_one_spare_byte);
     RUN_TEST(overflow_reports_failure_and_freezes_buffer);
+    RUN_TEST(finalize_twice_is_rejected);
     RUN_TEST(null_key_is_rejected_without_writing);
 }
 
