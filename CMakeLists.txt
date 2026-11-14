@@ -12,6 +12,7 @@ target_sources(jsnmk INTERFACE
 target_include_directories(jsnmk INTERFACE src)
 
 option(ENABLE_TESTS "Enable test compilation" ${PROJECT_IS_TOP_LEVEL})
+option(ENABLE_SANITIZERS "Build test executables with AddressSanitizer/UBSan" OFF)
 
 if(ENABLE_TESTS)
     enable_testing()
