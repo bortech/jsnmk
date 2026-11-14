@@ -424,7 +424,6 @@ TEST finalize_rolls_back_and_nullterminate(void)
     ASSERT_EQ((ptrdiff_t)2, b.p - buf);
     ASSERT_STRN_EQ("{}", buf, 2);
     ASSERT_EQ((uint32_t)(sizeof(buf) - 2), b.size);
-    /* Only p/size are rolled back; the comma stays in memory. */
     ASSERT_EQ('\0', buf[2]);
     for (size_t i = 3; i < sizeof(buf); i++)
         ASSERT_EQ((unsigned char)0xAA, (unsigned char)buf[i]);
