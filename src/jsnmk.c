@@ -76,6 +76,7 @@ static bool jsnmk_vfmt(jsnmk_buf_t *b, const char* fmt, va_list args)
 }
 
 __attribute__ ((__format__ (__printf__, 2, 3)))
+__attribute__((warn_unused_result))
 static bool jsnmk_fmt_value(jsnmk_buf_t *b, const char *fmt, ...)
 {
     va_list args;
@@ -115,7 +116,6 @@ bool jsnmk_arr_end(jsnmk_buf_t *b)
     return jsnmk_end(b, ']');
 }
 
-__attribute__ ((__format__ (__printf__, 2, 3)))
 bool jsnmk_fstr(jsnmk_buf_t *b, const char *fmt, ...)
 {
     if (!jsnmk_ch(b, '"'))
@@ -206,7 +206,6 @@ bool jsnmk_key_cstr(jsnmk_buf_t *b, const char *key, const char *value)
     return jsnmk_cstr(b, value);
 }
 
-__attribute__ ((__format__ (__printf__, 3, 4)))
 bool jsnmk_key_fstr(jsnmk_buf_t *b, const char *key, const char *fmt, ...)
 {
     if (!jsnmk_name(b, key))

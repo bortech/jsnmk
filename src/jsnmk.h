@@ -215,6 +215,7 @@ bool jsnmk_cstr(jsnmk_buf_t *b, const char *value);
  * @warning The formatted text is not escaped. The caller must ensure that
  *          it contains no characters that require JSON escaping.
  */
+__attribute__ ((__format__ (__printf__, 2, 3)))
 bool jsnmk_fstr(jsnmk_buf_t *b, const char *fmt, ...);
 
 /** @} */
@@ -349,6 +350,7 @@ bool jsnmk_key_cstr(jsnmk_buf_t *b, const char *key, const char *value);
  * @retval true  The member was written.
  * @retval false @p key is NULL, or the buffer is too small.
  */
+__attribute__ ((__format__ (__printf__, 3, 4)))
 bool jsnmk_key_fstr(jsnmk_buf_t *b, const char *key, const char *fmt, ...);
 
 /** @} */
