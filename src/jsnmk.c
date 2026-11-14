@@ -1,9 +1,16 @@
 #include "jsnmk.h"
 
 #include <stdarg.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <stddef.h>
+
+#ifdef USE_STDIO_SNPRINTF
 #include <stdio.h>
+#define snprintf_ snprintf
+#define vsnprintf_ vsnprintf
+#else
+extern int  snprintf_(char* s, size_t count, const char* format, ...);
+extern int vsnprintf_(char* s, size_t count, const char* format, va_list arg);
+#endif
 
 __attribute__((warn_unused_result))
 static bool jsnmk_ch(jsnmk_buf_t *b, char c)
@@ -21,7 +28,7 @@ static bool jsnmk_name(jsnmk_buf_t *b, const char *name)
     if (!name)
         return false;
 
-    int n = snprintf(b->p, b->size, "\"%s\":", name);
+    int n = snprintf_(b->p, b->size, "\"%s\":", name);
     if (n < 0 || (uint32_t)n >= b->size) {
         b->size = 0;
         return false;
@@ -65,7 +72,7 @@ static bool jsnmk_end(jsnmk_buf_t *b, char c)
 __attribute__((warn_unused_result))
 static bool jsnmk_vfmt(jsnmk_buf_t *b, const char* fmt, va_list args)
 {
-    int n = vsnprintf(b->p, b->size, fmt, args);
+    int n = vsnprintf_(b->p, b->size, fmt, args);
     if (n < 0 || (uint32_t)n >= b->size) {
         b->size = 0;
         return false;
@@ -93,7 +100,7 @@ bool jsnmk_key_obj_begin(jsnmk_buf_t *b, const char *key)
 
 bool jsnmk_obj_begin(jsnmk_buf_t *b)
 {
-    return jsnmk_begin(b, NULL, '{');
+    return jsnmk_begin(b, 0, '{');
 }
 
 bool jsnmk_obj_end(jsnmk_buf_t *b)
@@ -108,7 +115,7 @@ bool jsnmk_key_arr_begin(jsnmk_buf_t *b, const char *key)
 
 bool jsnmk_arr_begin(jsnmk_buf_t *b)
 {
-    return jsnmk_begin(b, NULL, '[');
+    return jsnmk_begin(b, 0, '[');
 }
 
 bool jsnmk_arr_end(jsnmk_buf_t *b)

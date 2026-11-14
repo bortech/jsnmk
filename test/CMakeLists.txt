@@ -1,9 +1,11 @@
 add_executable(jsnmk_unit_tests tests.c)
+target_compile_definitions(jsnmk_unit_tests PRIVATE USE_STDIO_SNPRINTF)
 target_link_libraries(jsnmk_unit_tests PRIVATE jsnmk)
 
 add_test(NAME jsnmk_unit_tests COMMAND jsnmk_unit_tests -v)
 
 add_executable(jsnmk_json_dump json_dump.c)
+target_compile_definitions(jsnmk_json_dump PRIVATE USE_STDIO_SNPRINTF)
 target_link_libraries(jsnmk_json_dump PRIVATE jsnmk)
 
 find_package(Python3 COMPONENTS Interpreter QUIET)
