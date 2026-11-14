@@ -1,7 +1,11 @@
-# jsnmk
+# JSNMK
 
 A zero-allocation JSON writer for caller-provided fixed-size buffers,
-intended for microcontrollers and other constrained targets.
+intended for use in embedded, MCUs and other constrained targets.
+
+Project is inspired by [rafagafe/json-maker](https://github.com/rafagafe/json-maker)
+and intended to use with no-allocating snprintf realization like
+[eyalroz/printf](https://github.com/eyalroz/printf) or similar.
 
 Add `src/jsnmk.c` and `src/jsnmk.h` to your project, or link the CMake
 interface target `jsnmk`.
