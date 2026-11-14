@@ -39,6 +39,14 @@ static bool jsnmk_begin(jsnmk_buf_t *b, const char *name, char c)
     return jsnmk_ch(b, c);
 }
 
+/*
+ * Precondition: a matching begin call has already written at least one
+ * byte, so b->p points past the start of the caller's buffer.
+ *
+ * If this precondition is violated, for example by calling an end
+ * function without a matching begin on a fresh buffer, the check below
+ * reads b->p[-1] and the behavior is undefined. See jsnmk.h.
+ */
 __attribute__((warn_unused_result))
 static bool jsnmk_end(jsnmk_buf_t *b, bool named, char c)
 {
