@@ -62,8 +62,8 @@ bool jsnmk_key_f32(jsnmk_buf_t *b, const char *key, float value);
 bool jsnmk_key_cstr(jsnmk_buf_t *b, const char *key, const char *value);
 bool jsnmk_key_fstr(jsnmk_buf_t *b, const char *key, const char *fmt, ...);
 
-bool jsnmk_obj_end(jsnmk_buf_t *b);        /* requires jsnmk_obj_begin() */
-bool jsnmk_arr_end(jsnmk_buf_t *b);        /* requires jsnmk_arr_begin() */
-bool jsnmk_finalyze(jsnmk_buf_t *b);       /* requires any API call befor*/
+bool jsnmk_obj_end(jsnmk_buf_t *b);        /* requires jsnmk_*obj_begin() */
+bool jsnmk_arr_end(jsnmk_buf_t *b);        /* requires jsnmk_*arr_begin() */
+bool jsnmk_finalyze(jsnmk_buf_t *b);       /* requires any API call before */
 
 #endif // JSNMK_H
