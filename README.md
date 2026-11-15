@@ -1,5 +1,7 @@
 # JSNMK
 
+[![Build and run tests](https://github.com/bortech/jsnmk/actions/workflows/build_tests.yml/badge.svg)](https://github.com/bortech/jsnmk/actions/workflows/build_tests.yml)
+
 A zero-allocation JSON writer for caller-provided fixed-size buffers,
 intended for use in embedded, MCUs and other constrained targets.
 
