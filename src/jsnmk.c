@@ -12,6 +12,17 @@ extern int  snprintf_(char* s, size_t count, const char* format, ...);
 extern int vsnprintf_(char* s, size_t count, const char* format, va_list arg);
 #endif
 
+#ifdef __arm__
+// printf-formats for 32bit arm-none-eabi only
+#define I32_FMT "%ld"
+#define U32_FMT "%lu"
+#define F32_FMT "%g"
+#else
+#define I32_FMT "%d"
+#define U32_FMT "%u"
+#define F32_FMT "%g"
+#endif
+
 __attribute__((warn_unused_result))
 static bool jsnmk_ch(jsnmk_buf_t *b, char c)
 {
@@ -158,17 +169,17 @@ bool jsnmk_null(jsnmk_buf_t *b)
 
 bool jsnmk_i32(jsnmk_buf_t *b, int32_t value)
 {
-    return jsnmk_fmt_value(b, "%d,", value);
+    return jsnmk_fmt_value(b, I32_FMT",", value);
 }
 
 bool jsnmk_u32(jsnmk_buf_t *b, uint32_t value)
 {
-    return jsnmk_fmt_value(b, "%u,", value);
+    return jsnmk_fmt_value(b, U32_FMT",", value);
 }
 
 bool jsnmk_f32(jsnmk_buf_t *b, float value)
 {
-    return jsnmk_fmt_value(b, "%g,", value);
+    return jsnmk_fmt_value(b, F32_FMT",", value);
 }
 
 bool jsnmk_key_null(jsnmk_buf_t *b, const char *key)
