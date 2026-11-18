@@ -431,6 +431,17 @@ bool jsnmk_arr_end(jsnmk_buf_t *b);
  */
 bool jsnmk_finalyze(jsnmk_buf_t *b);
 
+/**
+ * @brief Helper function to get the amount of bytes written in buffer.
+ * @param[in] b Internal buffer state.
+ * @param[in] buffer Buffer pointer used to initialize b
+ * @retval Amount of bytes written to buffer
+ */
+static inline int jsnmk_size(const jsnmk_buf_t *b, const char *buffer)
+{
+    return b->p - buffer;
+}
+
 /** @} */
 
 /** @} */

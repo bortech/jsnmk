@@ -34,7 +34,7 @@ int main(void)
     jsnmk_obj_end(&b);
     jsnmk_finalyze(&b);
 
-    printf("%.*s\n", (int)(b.p - storage), storage);
+    printf("%.*s\n", jsnmk_size(&b, storage), storage);
     return 0;
 }
 ```
